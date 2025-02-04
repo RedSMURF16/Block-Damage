@@ -17,7 +17,7 @@
 * 
 *
 *	Changelog:
-*		v1.0 : Solved the unblock damage issue
+*		v1.0 : Initial re-building
 *		v1.1 : Added a time option instead of manually unblocking
 *
 */
@@ -49,11 +49,19 @@ enum _:MENUS
     MENU_SHOW_DURATIONS
 }
 
+enum _:LOGS
+{
+    LOGS_PRINT_CHAT,
+    LOGS_PRINT_CONSOLE,
+    LOGS_SHOW_ACTIVITY,
+    LOGS_AMX_LOG
+}
+
 new g_ePlayerData[ MAX_PLAYERS + 1 ][ PLAYER_DATA ],
     g_iVault,
 	g_iMaxPlayers,
     g_iitemHandlerPlayers,
-    g_szDurations[][] = { "10", "20", "30", "45", "60", "90", "120", "240", "480", "PERMANENT" }
+    g_szDurations[][] = { "1", "2", "3", "5", "10", "15", "30", "45", "60", "120", "180", "240", "300", "PERMANENT" }
 
 public plugin_init()
 {
@@ -114,7 +122,7 @@ public updateTimer()
             g_ePlayerData[ iPlayer ][ PDATA_NO_DAMAGE ] = false
             g_ePlayerData[ iPlayer ][ PDATA_NO_DAMAGE_COOLDOWN_FLAG ] = false
 
-            client_print( 0, print_chat, "%s is no longer blocked from doing damage", g_ePlayerData[ iPlayer ][ PDATA_NAME ] )
+            LogCommand( iPlayer, LOGS_PRINT_CHAT, "%s is no longer blocked from doing damage", g_ePlayerData[ iPlayer ][ PDATA_NAME ] )
         }
         else
             g_ePlayerData[ iPlayer ][ PDATA_NO_DAMAGE_COOLDOWN ] -= 1 
@@ -142,7 +150,17 @@ public cmdBlockDamage( id, iLevel, iCid )
             if ( iTarget )
             {
                 g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE ] = !g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE ]
-                logCommand( id, iTarget )
+
+                LogCommand( id, LOGS_PRINT_CONSOLE, "[AMXX] %slocked damage for player %s",
+                g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE ] ? "B" : "Unb", g_ePlayerData[ iTarget ][ PDATA_NAME ] )
+
+                LogCommand( id, LOGS_SHOW_ACTIVITY, "%slocked damage for player %s",
+                g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE ] ? "B" : "Unb", g_ePlayerData[ iTarget ][ PDATA_NAME ] )
+
+                LogCommand( id, LOGS_AMX_LOG, "[AMXX] ADMIN ^"%s^" <%s> %slocked damage for ^"%s^" <%s>",
+                g_ePlayerData[ id ][ PDATA_NAME ], g_ePlayerData[ id ][ PDATA_AUTHID ],
+                g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE ] ? "B" : "Unb",
+                g_ePlayerData[ iTarget ][ PDATA_NAME ], g_ePlayerData[ iTarget ][ PDATA_AUTHID ] )
             }
         }
 
@@ -161,7 +179,20 @@ public cmdBlockDamage( id, iLevel, iCid )
 
                 g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE ] = true
                 g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE_COOLDOWN_FLAG ] = true
-                logCommand( id, iTarget, true )
+                
+                LogCommand( id, LOGS_PRINT_CONSOLE, "[AMXX] Blocked damage for player %s for %d second%s", 
+                g_ePlayerData[ iTarget ][ PDATA_NAME ], g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE_COOLDOWN ],
+                g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE_COOLDOWN ] == 1 ? "" : "s" )
+
+                LogCommand( id, LOGS_SHOW_ACTIVITY, "Blocked damage for %s for %d second%s", 
+                g_ePlayerData[ iTarget ][ PDATA_NAME ], g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE_COOLDOWN ],
+                g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE_COOLDOWN ] == 1 ? "" : "s" )
+
+                LogCommand( id, LOGS_AMX_LOG, "[AMXX] ADMIN ^"%s^" <%s> Blocked damage for ^"%s^" <%s> for %d second%s", 
+                g_ePlayerData[ id ][ PDATA_NAME ], g_ePlayerData[ id ][ PDATA_AUTHID ],
+                g_ePlayerData[ iTarget ][ PDATA_NAME ], g_ePlayerData[ iTarget ][ PDATA_AUTHID ],
+                g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE_COOLDOWN ], 
+                g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE_COOLDOWN ] == 1 ? "" : "s" )
             }
         }
 
@@ -256,7 +287,12 @@ public menuHandlerDurations( id, menu, item )
     if ( szInfo[ 0 ] == 'P' )
     {
         g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE ] = true
-        logCommand( id, iTarget )
+
+        LogCommand( id, LOGS_PRINT_CONSOLE, "[AMXX] Blocked damage for player %s", g_ePlayerData[ iTarget ][ PDATA_NAME ] )
+        LogCommand( id, LOGS_SHOW_ACTIVITY, "Blocked damage for player %s", g_ePlayerData[ iTarget ][ PDATA_NAME ]  )
+        LogCommand( id, LOGS_AMX_LOG, "[AMXX] ADMIN ^"%s^" <%s> Blocked damage for ^"%s^" <%s>", 
+        g_ePlayerData[ id ][ PDATA_NAME ], g_ePlayerData[ id ][ PDATA_AUTHID ],
+        g_ePlayerData[ iTarget ][ PDATA_NAME ], g_ePlayerData[ iTarget ][ PDATA_AUTHID ] )
     }
     else 
     {
@@ -267,7 +303,19 @@ public menuHandlerDurations( id, menu, item )
         g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE_COOLDOWN ] = iDuration
         g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE_COOLDOWN_FLAG ] = true
 
-        logCommand( id, iTarget, true )
+        LogCommand( id, LOGS_PRINT_CONSOLE, "[AMXX] Blocked damage for player %s for %d second%s", 
+        g_ePlayerData[ iTarget ][ PDATA_NAME ], g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE_COOLDOWN ],
+        g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE_COOLDOWN ] == 1 ? "" : "s" )
+
+        LogCommand( id, LOGS_SHOW_ACTIVITY, "Blocked damage for %s for %d second%s", 
+        g_ePlayerData[ iTarget ][ PDATA_NAME ], g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE_COOLDOWN ],
+        g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE_COOLDOWN ] == 1 ? "" : "s" )
+
+        LogCommand( id, LOGS_AMX_LOG, "[AMXX] ADMIN ^"%s^" <%s> Blocked damage for ^"%s^" <%s> for %d second%s", 
+        g_ePlayerData[ id ][ PDATA_NAME ], g_ePlayerData[ id ][ PDATA_AUTHID ],
+        g_ePlayerData[ iTarget ][ PDATA_NAME ], g_ePlayerData[ iTarget ][ PDATA_AUTHID ],
+        g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE_COOLDOWN ], 
+        g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE_COOLDOWN ] == 1 ? "" : "s" )
     }
 
     menu_destroy( menu )
@@ -309,34 +357,16 @@ public fwdPlayerTraceAttack( iVictim, iAttacker, Float:Damage, Float:fDirection[
 	return ( isPlayer( iAttacker ) && g_ePlayerData[ iAttacker ][ PDATA_NO_DAMAGE ] ) ? HAM_SUPERCEDE : HAM_IGNORED
 }
 
-stock logCommand( id, iTarget, bool:bCoolDown = false )
+public LogCommand( const id, const iType, const szText[], any:... )
 {
-    if ( !bCoolDown )
+    new szMessage[ 128 ]
+    vformat( szMessage, charsmax( szMessage ), szText, 4 )
+
+    switch( iType )
     {
-        console_print( id, "[AMXX] %slocked damage for player %s", 
-        g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE ] ? "B" : "Unb", g_ePlayerData[ iTarget ][ PDATA_NAME ] )
-
-	    show_activity( id, g_ePlayerData[ id ][ PDATA_NAME ], "%slocked damage for %s",
-        g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE ] ? "B" : "Unb", g_ePlayerData[ iTarget ][ PDATA_NAME ] )
-
-	    log_amx( "[AMXX] ADMIN ^"%s^" <%s> %slocked damage for ^"%s^" <%s>", 
-        g_ePlayerData[ id ][ PDATA_NAME ], g_ePlayerData[ id ][ PDATA_AUTHID ], 
-	    g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE ] ? "B" : "Unb", 
-        g_ePlayerData[ iTarget ][ PDATA_NAME ], g_ePlayerData[ iTarget ][ PDATA_AUTHID ] )
-    }
-    else 
-    {
-        console_print( id, "[AMXX] Blocked damage for player %s for %d second%s", 
-        g_ePlayerData[ iTarget ][ PDATA_NAME ], g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE_COOLDOWN ], 
-        g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE_COOLDOWN ] == 1 ? "" : "s" )
-
-	    show_activity( id, g_ePlayerData[ id ][ PDATA_NAME ], "Blocked damage for %s for %d second%s",
-        g_ePlayerData[ iTarget ][ PDATA_NAME ], g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE_COOLDOWN ], 
-        g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE_COOLDOWN ] == 1 ? "" : "s" )
-
-	    log_amx( "[AMXX] ADMIN ^"%s^" <%s> Blocked damage for ^"%s^" <%s> for %d second%s", 
-        g_ePlayerData[ id ][ PDATA_NAME ], g_ePlayerData[ id ][ PDATA_AUTHID ], 
-        g_ePlayerData[ iTarget ][ PDATA_NAME ], g_ePlayerData[ iTarget ][ PDATA_AUTHID ],
-        g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE_COOLDOWN ], g_ePlayerData[ iTarget ][ PDATA_NO_DAMAGE_COOLDOWN ] == 1 ? "" : "s" )
+        case LOGS_PRINT_CHAT:       client_print( id, print_chat, "%s", szMessage )
+        case LOGS_PRINT_CONSOLE:    console_print( id, "%s", LOGS_PRINT_CONSOLE )
+        case LOGS_SHOW_ACTIVITY:    show_activity( id, g_ePlayerData[ id ][ PDATA_NAME ], "%s", szMessage )
+        case LOGS_AMX_LOG:          log_amx( "%s", szMessage )
     }
 }
